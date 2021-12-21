@@ -84,22 +84,26 @@ services:
     environment:
       - "HADOOP_CONF_DIR=/etc/hadoop"
       - "USER=root"
+
   # Kafka Producer App
-  #kafka-producer-app:
-  #  image: kafka-producer-app
-  #  depends_on:
-  #    - db
-  #    - zookeeper
+  kafka-producer-app:
+    image: kafka-producer-app
+    depends_on:
+      - db
+      - zookeeper
 
   # Server and Dashboard App
-  #dashboard-app:
-  #  image: dashboard-app
-  #  depends_on:
-  #    - zookeeper
-  #    - kafka
-  #    - db
-  #  ports:
-  #    - "3000:3000"
+  dashboard-app:
+    image: dashboard-app
+    depends_on:
+      - zookeeper
+      - kafka
+      - db
+    ports:
+      - "3000:3000"
+  # Startup of kafka-producer-app and dashboard is possible. Dashboard-app exits
+  # due to a missing connection to MySQL Container. (This happens only if the dashboard
+  # is containerized. If run locally it works just fine.)  
 
   # Nginx for Web App
   #nginx:
