@@ -9,7 +9,7 @@ services:
   db:
     image: mysql:latest
     volumes:
-    # Creates db, tables
+      # Creates db, tables
       - ./init:/docker-entrypoint-initdb.d
     restart: always
     ports:
@@ -21,13 +21,18 @@ services:
       MYSQL_DATABASE: monitoringData
       MYSQL_USER: monitor
       MYSQL_PASSWORD: monitor
-    command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci'] 
+    command:
+      [
+        'mysqld',
+        '--character-set-server=utf8mb4',
+        '--collation-server=utf8mb4_unicode_ci'
+      ]
     #healthcheck:
     #  test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
     #  timeout: 20s
     #  retries: 10 
-     
-  # Zookeper - prerequisite for Kafka!
+
+    # Zookeper - prerequisite for Kafka!
   zookeeper:
     image: confluentinc/cp-zookeeper:5.3.1
     ports:
@@ -64,7 +69,7 @@ services:
       CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
       CONFLUENT_METRICS_ENABLE: 'true'
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
-   
+
   # Hadoop
   Hadoop:
     image: sequenceiq/hadoop-docker
@@ -79,7 +84,6 @@ services:
     environment:
       - "HADOOP_CONF_DIR=/etc/hadoop"
       - "USER=root"
-    
   # Kafka Producer App
   #kafka-producer-app:
   #  image: kafka-producer-app
@@ -96,8 +100,7 @@ services:
   #    - db
   #  ports:
   #    - "3000:3000"
-      
-       
+
   # Nginx for Web App
   #nginx:
   # image: nginx:latest
