@@ -1,0 +1,105 @@
+version: '3.9'
+services:
+  # Sets up networking between containers - is this necessary?
+  #networks:
+  #  default:
+  #    name: conditionmonitor
+
+  # MySQL Database
+  db:
+    image: mysql:latest
+    volumes:
+    # Creates db, tables
+      - ./init:/docker-entrypoint-initdb.d
+    restart: always
+    ports:
+      - 3306:3306
+    expose:
+      - 3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: monitoringData
+      MYSQL_USER: monitor
+      MYSQL_PASSWORD: monitor
+    command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci'] 
+    #healthcheck:
+    #  test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+    #  timeout: 20s
+    #  retries: 10 
+     
+  # Zookeper - prerequisite for Kafka!
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.3.1
+    ports:
+      - '2181:2181'
+    expose:
+      - 2181
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_AUTH_PROVIDER_1: org.apache.zookeeper.server.auth.SASLAuthenticationProvider
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-server:5.4.0
+    depends_on:
+      - zookeeper
+    ports:
+      - '9092:9092'
+      - '29092:29092'
+    expose:
+      - 9092
+      - 29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+   
+  # Hadoop
+  Hadoop:
+    image: sequenceiq/hadoop-docker
+    ports:
+      - "9000:9000"
+      - "50070:50070"
+    expose:
+      - 9000
+      - 50070
+    volumes:
+      - ./data:/hadoop/data
+    environment:
+      - "HADOOP_CONF_DIR=/etc/hadoop"
+      - "USER=root"
+    
+  # Kafka Producer App
+  #kafka-producer-app:
+  #  image: kafka-producer-app
+  #  depends_on:
+  #    - db
+  #    - zookeeper
+
+  # Server and Dashboard App
+  #dashboard-app:
+  #  image: dashboard-app
+  #  depends_on:
+  #    - zookeeper
+  #    - kafka
+  #    - db
+  #  ports:
+  #    - "3000:3000"
+      
+       
+  # Nginx for Web App
+  #nginx:
+  # image: nginx:latest
+  # ports:
+  #   - 3000:80
